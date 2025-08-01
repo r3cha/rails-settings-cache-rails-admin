@@ -5,12 +5,7 @@ module RailsAdminSettingsUi
   class Engine < ::Rails::Engine
     isolate_namespace RailsAdminSettingsUi
 
-    initializer "rails_admin_settings_ui.setup" do |app|
-      # Register the custom action with RailsAdmin
-      ActiveSupport.on_load(:after_initialize) do
-        RailsAdmin::Config::Actions.register(:settings_ui, RailsAdminSettingsUi::SettingsAction)
-      end
-    end
+    # Action registration is handled by the Railtie
 
     config.generators do |g|
       g.test_framework :rspec
