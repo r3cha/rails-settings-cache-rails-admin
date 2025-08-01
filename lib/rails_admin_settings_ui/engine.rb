@@ -12,12 +12,6 @@ module RailsAdminSettingsUi
       end
     end
 
-    initializer "rails_admin_settings_ui.helpers" do
-      ActiveSupport.on_load(:action_view) do
-        include RailsAdminSettingsUiHelper
-      end
-    end
-
     config.generators do |g|
       g.test_framework :rspec
     end
