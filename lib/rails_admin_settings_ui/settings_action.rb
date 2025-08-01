@@ -107,17 +107,40 @@ module RailsAdminSettingsUi
           
           settings_class = Setting
           
+          # Debug: Let's see what methods are available
+          Rails.logger.info "=== DEBUG: Setting class methods ==="
+          Rails.logger.info "Available methods: #{settings_class.methods.grep(/default|field|_field/).sort}"
+          Rails.logger.info "Singleton methods: #{settings_class.singleton_methods.grep(/default|field|_field/).sort}"
+          
           # Handle different versions of rails-settings-cached
           defaults = if settings_class.respond_to?(:get_defaults)
+            Rails.logger.info "Using get_defaults"
             settings_class.get_defaults
           elsif settings_class.respond_to?(:defaults)
+            Rails.logger.info "Using defaults"
             settings_class.defaults
           elsif settings_class.respond_to?(:_defaults)
+            Rails.logger.info "Using _defaults"
             settings_class._defaults
+          elsif settings_class.respond_to?(:defined_fields)
+            Rails.logger.info "Using defined_fields"
+            settings_class.defined_fields
+          elsif settings_class.respond_to?(:_defined_fields)
+            Rails.logger.info "Using _defined_fields"
+            settings_class._defined_fields
           else
-            # Fallback: try to get defaults from field definitions
+            Rails.logger.info "No default method found, trying to extract from class"
+            # Try to get field definitions from class variables or constants
+            if settings_class.class_variables.any?
+              Rails.logger.info "Class variables: #{settings_class.class_variables}"
+            end
+            if settings_class.constants.any?
+              Rails.logger.info "Constants: #{settings_class.constants}"
+            end
             {}
           end
+          
+          Rails.logger.info "Defaults found: #{defaults}"
           
           current_values = {}
           
