@@ -141,30 +141,82 @@ module RailsAdminSettingsUi
           end
           
           Rails.logger.info "Defaults found: #{defaults}"
+          Rails.logger.info "Defaults class: #{defaults.class}"
           
           current_values = {}
           
-          # Get current values from database
-          defaults.each_key do |key|
-            current_values[key] = settings_class.public_send(key)
-          end
-          
-          # Group settings by category (based on key prefix or custom logic)
-          grouped_settings = {}
-          defaults.each do |key, default_value|
-            category = extract_category(key)
-            grouped_settings[category] ||= []
+          # Handle different formats of defaults (Hash vs Array)
+          if defaults.is_a?(Hash)
+            # Handle Hash format: {key: default_value}
+            defaults.each_key do |key|
+              current_values[key] = settings_class.public_send(key)
+            end
             
-            field_type = determine_field_type(default_value, current_values[key])
+            # Group settings by category (based on key prefix or custom logic)
+            grouped_settings = {}
+            defaults.each do |key, default_value|
+              category = extract_category(key)
+              grouped_settings[category] ||= []
+              
+              field_type = determine_field_type(default_value, current_values[key])
+              
+              grouped_settings[category] << {
+                key: key,
+                label: key.to_s.humanize,
+                default_value: default_value,
+                current_value: current_values[key],
+                field_type: field_type,
+                description: extract_description(key, settings_class)
+              }
+            end
+          elsif defaults.is_a?(Array)
+            # Handle Array format: might be array of field names or field objects
+            Rails.logger.info "Processing Array format defaults"
+            grouped_settings = {}
             
-            grouped_settings[category] << {
-              key: key,
-              label: key.to_s.humanize,
-              default_value: default_value,
-              current_value: current_values[key],
-              field_type: field_type,
-              description: extract_description(key, settings_class)
-            }
+            defaults.each do |field_info|
+              Rails.logger.info "Field info: #{field_info} (#{field_info.class})"
+              
+              # Try to extract key and default value from different possible formats
+              key = nil
+              default_value = nil
+              
+              if field_info.is_a?(Symbol) || field_info.is_a?(String)
+                # Simple field name
+                key = field_info.to_sym
+                default_value = settings_class.public_send(key) rescue nil
+              elsif field_info.is_a?(Hash)
+                # Hash with field info
+                key = field_info[:name] || field_info['name'] || field_info.keys.first
+                default_value = field_info[:default] || field_info['default'] || field_info.values.first
+              elsif field_info.respond_to?(:name)
+                # Object with name method
+                key = field_info.name
+                default_value = field_info.respond_to?(:default) ? field_info.default : nil
+              end
+              
+              if key
+                key = key.to_sym
+                current_values[key] = settings_class.public_send(key) rescue default_value
+                
+                category = extract_category(key)
+                grouped_settings[category] ||= []
+                
+                field_type = determine_field_type(default_value, current_values[key])
+                
+                grouped_settings[category] << {
+                  key: key,
+                  label: key.to_s.humanize,
+                  default_value: default_value,
+                  current_value: current_values[key],
+                  field_type: field_type,
+                  description: extract_description(key, settings_class)
+                }
+              end
+            end
+          else
+            Rails.logger.info "Unknown defaults format: #{defaults.class}"
+            grouped_settings = {}
           end
           
           grouped_settings
