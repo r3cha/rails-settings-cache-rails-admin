@@ -99,11 +99,16 @@ module RailsAdminSettingsUi
 
     register_instance_option :controller do
       proc do
-        # Include helper methods in the controller context
+        # Include helper methods directly in the view context through instance methods
         extend RailsAdminSettingsUiHelperMethods
         
-        # Make helper methods available in view context
-        view_context.extend RailsAdminSettingsUiHelperMethods
+        # Make helper methods available to view
+        methods_to_add = RailsAdminSettingsUiHelperMethods.instance_methods
+        methods_to_add.each do |method_name|
+          define_singleton_method(method_name) do |*args, **kwargs|
+            RailsAdminSettingsUiHelperMethods.instance_method(method_name).bind(self).call(*args, **kwargs)
+          end
+        end
         
         def build_settings_data
           return {} unless defined?(Setting)
