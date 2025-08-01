@@ -1,0 +1,145 @@
+<%= content_for :contextual_tabs do %>
+  <li class="active">
+    <%= link_to rails_admin.settings_ui_path do %>
+      <i class="fa fa-cog"></i>
+      Settings
+    <% end %>
+  </li>
+<% end %>
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="fa fa-cog"></i>
+          Application Settings
+        </h3>
+      </div>
+      
+      <%= form_tag rails_admin.settings_ui_path, method: :post, class: 'form-horizontal', local: true do %>
+        <div class="card-body">
+          <% if @settings_data.any? %>
+            <div class="nav-tabs-custom">
+              <ul class="nav nav-tabs">
+                <% @settings_data.each_with_index do |(category, settings), index| %>
+                  <li class="nav-item">
+                    <a class="nav-link <%= 'active' if index == 0 %>" 
+                       data-toggle="tab" 
+                       href="#tab_<%= category.parameterize %>">
+                      <%= category %>
+                    </a>
+                  </li>
+                <% end %>
+              </ul>
+              
+              <div class="tab-content">
+                <% @settings_data.each_with_index do |(category, settings), index| %>
+                  <div class="tab-pane <%= 'active' if index == 0 %>" 
+                       id="tab_<%= category.parameterize %>">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <% settings.each do |setting| %>
+                          <div class="form-group row">
+                            <label class="col-sm-3 col-form-label" 
+                                   for="setting_<%= setting[:key] %>">
+                              <%= setting[:label] %>
+                              <% if setting[:description] %>
+                                <small class="text-muted d-block">
+                                  <%= setting[:description] %>
+                                </small>
+                              <% end %>
+                            </label>
+                            
+                            <div class="col-sm-6">
+                              <%= render_setting_field(setting) %>
+                              
+                              <% if setting[:default_value] != setting[:current_value] %>
+                                <small class="text-muted">
+                                  Default: <%= setting[:default_value].inspect %>
+                                </small>
+                              <% end %>
+                            </div>
+                            
+                            <div class="col-sm-3">
+                              <% if setting[:current_value] != setting[:default_value] %>
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-secondary reset-to-default"
+                                        data-key="<%= setting[:key] %>"
+                                        data-default="<%= setting[:default_value] %>"
+                                        title="Reset to default">
+                                  <i class="fa fa-undo"></i> Reset
+                                </button>
+                              <% end %>
+                            </div>
+                          </div>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% else %>
+            <div class="alert alert-info">
+              <i class="fa fa-info-circle"></i>
+              No settings found. Make sure your Setting class has default values defined.
+            </div>
+          <% end %>
+        </div>
+        
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">
+            <i class="fa fa-save"></i>
+            Save Settings
+          </button>
+          
+          <a href="<%= rails_admin.dashboard_path %>" class="btn btn-secondary">
+            <i class="fa fa-arrow-left"></i>
+            Back to Dashboard
+          </a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle reset to default buttons
+  document.querySelectorAll('.reset-to-default').forEach(function(button) {
+    button.addEventListener('click', function() {
+      var key = this.dataset.key;
+      var defaultValue = this.dataset.default;
+      var field = document.querySelector('[name="settings[' + key + ']"]');
+      
+      if (field) {
+        if (field.type === 'checkbox') {
+          field.checked = defaultValue === 'true';
+        } else {
+          field.value = defaultValue;
+        }
+        
+        // Hide the reset button after resetting
+        this.style.display = 'none';
+      }
+    });
+  });
+  
+  // Show/hide reset buttons based on field changes
+  document.querySelectorAll('input, textarea, select').forEach(function(field) {
+    if (field.name && field.name.startsWith('settings[')) {
+      field.addEventListener('change', function() {
+        var key = this.name.match(/settings\[(.+)\]/)[1];
+        var resetButton = document.querySelector('[data-key="' + key + '"]');
+        var defaultValue = resetButton ? resetButton.dataset.default : null;
+        
+        if (resetButton) {
+          var currentValue = this.type === 'checkbox' ? this.checked.toString() : this.value;
+          resetButton.style.display = currentValue !== defaultValue ? 'inline-block' : 'none';
+        }
+      });
+    }
+  });
+});
+</script>
