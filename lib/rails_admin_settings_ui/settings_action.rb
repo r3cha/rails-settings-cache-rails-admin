@@ -88,7 +88,6 @@ module RailsAdminSettingsUi
     end
   end
 
-module RailsAdminSettingsUi
   class SettingsAction < RailsAdmin::Config::Actions::Base
     register_instance_option :root? do
       true
