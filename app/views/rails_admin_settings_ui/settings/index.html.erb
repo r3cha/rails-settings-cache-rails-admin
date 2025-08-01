@@ -52,7 +52,38 @@
                             </label>
                             
                             <div class="col-sm-6">
-                              <%= render_setting_field(setting) %>
+                              <% field_name = "settings[#{setting[:key]}]" %>
+                              <% field_id = "setting_#{setting[:key]}" %>
+                              <% current_value = setting[:current_value] %>
+                              
+                              <% case setting[:field_type] %>
+                              <% when :boolean %>
+                                <div class="form-check">
+                                  <%= check_box_tag(field_name, '1', current_value, id: field_id, class: 'form-check-input') %>
+                                  <%= hidden_field_tag(field_name, '0') %>
+                                  <%= label_tag(field_id, 'Enabled', class: 'form-check-label') %>
+                                </div>
+                              <% when :integer %>
+                                <%= number_field_tag(field_name, current_value, id: field_id, class: 'form-control', step: 1) %>
+                              <% when :float %>
+                                <%= number_field_tag(field_name, current_value, id: field_id, class: 'form-control', step: 0.01) %>
+                              <% when :text %>
+                                <%= text_area_tag(field_name, current_value, id: field_id, class: 'form-control', rows: 4) %>
+                              <% when :email %>
+                                <%= email_field_tag(field_name, current_value, id: field_id, class: 'form-control') %>
+                              <% when :url %>
+                                <%= url_field_tag(field_name, current_value, id: field_id, class: 'form-control') %>
+                              <% when :array %>
+                                <% array_value = current_value.is_a?(Array) ? current_value.join(', ') : current_value.to_s %>
+                                <%= text_field_tag(field_name, array_value, id: field_id, class: 'form-control', placeholder: 'Enter comma-separated values') %>
+                                <small class="form-text text-muted">Separate multiple values with commas</small>
+                              <% when :json %>
+                                <% json_value = current_value.is_a?(String) ? current_value : current_value.to_json %>
+                                <%= text_area_tag(field_name, json_value, id: field_id, class: 'form-control font-monospace', rows: 6, placeholder: '{"key": "value"}') %>
+                                <small class="form-text text-muted">Enter valid JSON</small>
+                              <% else # :string %>
+                                <%= text_field_tag(field_name, current_value, id: field_id, class: 'form-control') %>
+                              <% end %>
                               
                               <% if setting[:default_value] != setting[:current_value] %>
                                 <small class="text-muted">

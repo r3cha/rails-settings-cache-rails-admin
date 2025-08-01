@@ -1,0 +1,12 @@
+This gem is solving following problem:
+
+When we using two ruby gems:
+
+rails_admin - for admin panel 
+rails-settings-cached - for storing settings
+
+Problem is that on settings dasboard i want to have tab called Setting that will open settings in user friendly ui.
+
+Default rails_admin behaviour is showing setting item in table with 0 records and it hard to understand for non-technical that to override default Setting need to create record with key value.
+I want provide more user friendly interface for making it with default values that setted in class Setting < RailsSettings::Base model
+Please make it as a gem, create good name for it reflected what it doing, i want to test it locally before publis
