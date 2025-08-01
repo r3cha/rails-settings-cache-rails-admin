@@ -1,6 +1,6 @@
 <%= content_for :contextual_tabs do %>
   <li class="active">
-    <%= link_to rails_admin.settings_ui_path do %>
+    <%= link_to main_app.rails_admin_settings_path do %>
       <i class="fa fa-cog"></i>
       Settings
     <% end %>
@@ -17,7 +17,7 @@
         </h3>
       </div>
       
-      <%= form_tag rails_admin.settings_ui_path, method: :post, class: 'form-horizontal', local: true do %>
+      <%= form_tag request.path, method: :post, class: 'form-horizontal', local: true do %>
         <div class="card-body">
           <% if @settings_data.any? %>
             <div class="nav-tabs-custom">

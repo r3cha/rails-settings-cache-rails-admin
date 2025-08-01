@@ -106,7 +106,19 @@ module RailsAdminSettingsUi
           return {} unless defined?(Setting)
           
           settings_class = Setting
-          defaults = settings_class.get_defaults
+          
+          # Handle different versions of rails-settings-cached
+          defaults = if settings_class.respond_to?(:get_defaults)
+            settings_class.get_defaults
+          elsif settings_class.respond_to?(:defaults)
+            settings_class.defaults
+          elsif settings_class.respond_to?(:_defaults)
+            settings_class._defaults
+          else
+            # Fallback: try to get defaults from field definitions
+            {}
+          end
+          
           current_values = {}
           
           # Get current values from database
@@ -201,8 +213,17 @@ module RailsAdminSettingsUi
         def convert_value(key, value)
           return nil if value.blank?
           
-          # Get the original type from defaults
-          defaults = Setting.get_defaults
+          # Get the original type from defaults using the same approach as build_settings_data
+          defaults = if Setting.respond_to?(:get_defaults)
+            Setting.get_defaults
+          elsif Setting.respond_to?(:defaults)
+            Setting.defaults
+          elsif Setting.respond_to?(:_defaults)
+            Setting._defaults
+          else
+            {}
+          end
+          
           original_value = defaults[key.to_sym] || defaults[key.to_s]
           
           case original_value
@@ -228,7 +249,7 @@ module RailsAdminSettingsUi
         if request.post?
           update_settings
           flash[:notice] = "Settings updated successfully!"
-          redirect_to rails_admin.settings_ui_path
+          redirect_to request.path
         end
 
         render template: 'rails_admin_settings_ui/settings/index'
