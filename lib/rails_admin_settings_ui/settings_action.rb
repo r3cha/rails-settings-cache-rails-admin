@@ -102,6 +102,9 @@ module RailsAdminSettingsUi
         # Include helper methods in the controller context
         extend RailsAdminSettingsUiHelperMethods
         
+        # Make helper methods available in view context
+        view_context.extend RailsAdminSettingsUiHelperMethods
+        
         def build_settings_data
           return {} unless defined?(Setting)
           
