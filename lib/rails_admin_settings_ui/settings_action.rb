@@ -189,11 +189,17 @@ module RailsAdminSettingsUi
                 # Hash with field info
                 key = field_info[:name] || field_info['name'] || field_info.keys.first
                 default_value = field_info[:default] || field_info['default'] || field_info.values.first
+              elsif field_info.respond_to?(:key) && field_info.respond_to?(:default)
+                # RailsSettings::Fields object with key and default
+                key = field_info.key
+                default_value = field_info.default
               elsif field_info.respond_to?(:name)
                 # Object with name method
                 key = field_info.name
                 default_value = field_info.respond_to?(:default) ? field_info.default : nil
               end
+              
+              Rails.logger.info "Extracted key: #{key}, default_value: #{default_value}"
               
               if key
                 key = key.to_sym
@@ -204,6 +210,8 @@ module RailsAdminSettingsUi
                 
                 field_type = determine_field_type(default_value, current_values[key])
                 
+                Rails.logger.info "Adding setting: #{key} to category: #{category}, field_type: #{field_type}"
+                
                 grouped_settings[category] << {
                   key: key,
                   label: key.to_s.humanize,
@@ -212,12 +220,17 @@ module RailsAdminSettingsUi
                   field_type: field_type,
                   description: extract_description(key, settings_class)
                 }
+              else
+                Rails.logger.info "Key extraction failed for field_info: #{field_info}"
               end
             end
           else
             Rails.logger.info "Unknown defaults format: #{defaults.class}"
             grouped_settings = {}
           end
+          
+          Rails.logger.info "Final grouped_settings: #{grouped_settings}"
+          Rails.logger.info "Grouped settings keys: #{grouped_settings.keys}"
           
           grouped_settings
         end
