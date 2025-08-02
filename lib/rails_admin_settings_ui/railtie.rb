@@ -6,7 +6,7 @@ module RailsAdminSettingsUi
       # This will run before the Rails Admin config initializer
       Rails.application.config.to_prepare do
         if defined?(RailsAdmin) && defined?(RailsAdmin::Config::Actions)
-          RailsAdmin::Config::Actions.register(:settings_ui, RailsAdminSettingsUi::SettingsAction)
+          RailsAdmin::Config::Actions.register(:settings_ui, RailsAdminSettingsUi::SettingsUi)
         end
       end
     end

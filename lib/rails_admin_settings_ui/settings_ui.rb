@@ -1,7 +1,7 @@
 require "rails_admin/config/actions/base"
 
 module RailsAdminSettingsUi
-  class SettingsAction < RailsAdmin::Config::Actions::Base
+  class SettingsUi < RailsAdmin::Config::Actions::Base
     register_instance_option :root? do
       true
     end
@@ -185,16 +185,16 @@ module RailsAdminSettingsUi
               converted_value.to_yaml
             end
             
-            Rails.logger.info "Serialized value: #{serialized_value}"
+            # Rails.logger.info "Serialized value: #{serialized_value}"
             
             # Update directly without triggering full model validations
             if setting_record.persisted?
               result = setting_record.update_column(:value, serialized_value)
-              Rails.logger.info "Updated existing record: #{result}"
+              # Rails.logger.info "Updated existing record: #{result}"
             else
               setting_record.value = serialized_value
               result = setting_record.save(validate: false) # Skip validations to avoid cross-field validation errors
-              Rails.logger.info "Created new record: #{result}"
+              # Rails.logger.info "Created new record: #{result}"
             end
             
             # Clear the settings cache so the new value is loaded
@@ -206,7 +206,7 @@ module RailsAdminSettingsUi
             
             # Verify the setting was actually updated
             new_value = Setting.public_send(key)
-            Rails.logger.info "Verification: #{key} is now #{new_value}"
+            # Rails.logger.info "Verification: #{key} is now #{new_value}"
             
             return { success: true, message: "Setting updated successfully", new_value: new_value }
             
@@ -353,22 +353,22 @@ module RailsAdminSettingsUi
     end
 
     register_instance_option :action_name do
-      'settings_action'
+      'settings_ui'
     end
 
     # Set proper title with fallback
     register_instance_option :title do
-      I18n.t('admin.actions.settings_action.title', default: 'Settings')
+      I18n.t('admin.actions.settings_ui.title', default: 'Settings')
     end
 
     # Set proper menu label with fallback
     register_instance_option :menu_label do
-      I18n.t('admin.actions.settings_action.menu', default: 'Settings')
+      I18n.t('admin.actions.settings_ui.menu', default: 'Settings')
     end
 
     # Set breadcrumb text with fallback
     register_instance_option :breadcrumb_text do
-      I18n.t('admin.actions.settings_action.breadcrumb', default: 'Settings')
+      I18n.t('admin.actions.settings_ui.breadcrumb', default: 'Settings')
     end
 
   end

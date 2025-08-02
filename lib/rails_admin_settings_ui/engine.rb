@@ -1,5 +1,5 @@
 require "rails"
-require_relative "settings_action"
+require_relative "settings_ui"
 require_relative "helper"
 
 module RailsAdminSettingsUi

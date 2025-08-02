@@ -22,7 +22,7 @@ RailsAdmin.config do |config|
     delete
     
     # Manually register the settings action
-    collection :settings_ui, RailsAdminSettingsUi::SettingsAction
+    collection :settings_ui, RailsAdminSettingsUi::SettingsUi
   end
 
   # Hide the default Setting model from navigation
@@ -41,7 +41,7 @@ If the above doesn't work, try this approach:
 require 'rails_admin_settings_ui'
 
 # Register the action manually
-RailsAdmin::Config::Actions.register(:settings_ui, RailsAdminSettingsUi::SettingsAction)
+RailsAdmin::Config::Actions.register(:settings_ui, RailsAdminSettingsUi::SettingsUi)
 
 RailsAdmin.config do |config|
   # ... your existing config

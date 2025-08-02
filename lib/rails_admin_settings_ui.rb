@@ -7,6 +7,6 @@ module RailsAdminSettingsUi
   
   # Register the action immediately if Rails Admin is available
   if defined?(RailsAdmin) && defined?(RailsAdmin::Config::Actions)
-    RailsAdmin::Config::Actions.register(:settings_ui, RailsAdminSettingsUi::SettingsAction)
+    RailsAdmin::Config::Actions.register(:settings_ui, RailsAdminSettingsUi::SettingsUi)
   end
 end

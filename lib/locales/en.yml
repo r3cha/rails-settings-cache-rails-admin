@@ -1,7 +1,7 @@
 en:
   admin:
     actions:
-      settings_action:
+      settings_ui:
         title: "Application Settings"
         menu: "Settings"
         breadcrumb: "Settings"
