@@ -141,7 +141,7 @@
                     </td>
                     
                     <td>
-                      <span class="badge badge-<%= badge_color_for_type(setting[:field_type]) %>">
+                      <span>
                         <%= setting[:field_type].to_s.humanize %>
                       </span>
                     </td>
@@ -149,11 +149,11 @@
                     <td>
                       <div class="setting-status">
                         <% if setting[:current_value] != setting[:default_value] %>
-                          <span class="badge badge-warning">
+                          <span>
                             <i class="fa fa-edit"></i> Modified
                           </span>
                         <% else %>
-                          <span class="badge badge-success">
+                          <span>
                             <i class="fa fa-check"></i> Default
                           </span>
                         <% end %>
@@ -236,6 +236,36 @@
     
     .badge {
       font-size: 0.75em;
+      font-weight: 500;
+    }
+    
+    /* Ensure good contrast for all badges */
+    .badge-dark {
+      background-color: #343a40 !important;
+      color: #fff !important;
+    }
+    
+    .badge-success {
+      background-color: #28a745 !important;
+      color: #fff !important;
+    }
+    
+    .badge-primary {
+      background-color: #007bff !important;
+      color: #fff !important;
+    }
+    
+    /* Fix table header text visibility */
+    .table thead th {
+      color: #495057 !important;
+      background-color: #f8f9fa !important;
+      border-bottom: 2px solid #dee2e6 !important;
+      font-weight: 600 !important;
+    }
+    
+    /* Fix table cell text visibility */
+    .table td, .table tbody th {
+      color: #495057 !important;
     }
     
     .setting-feedback {
