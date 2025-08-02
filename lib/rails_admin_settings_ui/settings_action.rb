@@ -86,7 +86,7 @@ module RailsAdminSettingsUi
                 default_value: default_value,
                 current_value: current_values[key],
                 field_type: field_type,
-                description: extract_description(key, settings_class)
+                description: nil
               }
             end
           elsif defaults.is_a?(Array)
@@ -138,7 +138,7 @@ module RailsAdminSettingsUi
                   default_value: default_value,
                   current_value: current_values[key],
                   field_type: field_type,
-                  description: extract_description(key, settings_class)
+                  description: nil
                 }
               else
                 Rails.logger.info "Key extraction failed for field_info: #{field_info}"
@@ -255,20 +255,7 @@ module RailsAdminSettingsUi
           end
         end
 
-        def extract_description(key, settings_class)
-          # Try to extract description from comments or documentation
-          # This is a simple implementation - you might want to enhance it
-          case key.to_s
-          when /mail/
-            "Email related configuration"
-          when /api/
-            "API configuration"
-          when /cache/
-            "Caching configuration"
-          else
-            nil
-          end
-        end
+
 
         def convert_value(key, value)
           # Handle blank values
