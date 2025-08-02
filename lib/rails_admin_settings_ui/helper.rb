@@ -11,9 +11,9 @@ module RailsAdminSettingsUi
       when :email, :url
         'primary'
       when :array
-        'secondary'
+        'dark'
       else # :string
-        'light'
+        'dark'
       end
     end
   end
