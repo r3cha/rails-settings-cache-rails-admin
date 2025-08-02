@@ -1,14 +1,14 @@
 require_relative "lib/rails_admin_settings_ui/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "rails_admin_settings_ui"
+  spec.name          = "rails-settings-cached-rails-admin"
   spec.version       = RailsAdminSettingsUi::VERSION
-  spec.authors       = ["Your Name"]
-  spec.email         = ["your.email@example.com"]
+  spec.authors       = ["Roman Klevtsov"]
+  spec.email         = ["frontandstart@gmail.com"]
 
   spec.summary       = "User-friendly settings interface for Rails Admin with rails-settings-cached"
   spec.description   = "Provides a clean, intuitive UI for managing application settings in Rails Admin, integrating seamlessly with rails-settings-cached gem"
-  spec.homepage      = "https://github.com/yourusername/rails_admin_settings_ui"
+  spec.homepage      = "https://github.com/r3cha/rails-settings-cache-rails-admin"
   spec.license       = "MIT"
   spec.required_ruby_version = ">= 2.7.0"
 

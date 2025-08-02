@@ -16,7 +16,7 @@ A user-friendly interface for managing application settings in Rails Admin, desi
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'rails_admin_settings_ui'
+gem 'rails-settings-cached-rails-admin'
 ```
 
 And then execute:
@@ -122,31 +122,6 @@ The gem automatically detects appropriate field types:
 - Displays default values as help text
 
 ## Customization
-
-### Custom field descriptions
-
-You can enhance the `extract_description` method in the settings action to provide better descriptions:
-
-```ruby
-# In your Rails Admin config or custom initializer
-RailsAdminSettingsUi::SettingsAction.class_eval do
-  private
-
-  def extract_description(key, settings_class)
-    case key.to_s
-    when 'app_name'
-      'The display name of your application'
-    when 'maintenance_mode'
-      'Enable this to show a maintenance page to users'
-    when 'mail_from'
-      'Default sender email address for outgoing emails'
-    # Add more custom descriptions as needed
-    else
-      super
-    end
-  end
-end
-```
 
 ### Custom categorization
 
