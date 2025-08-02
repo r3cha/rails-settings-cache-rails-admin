@@ -1,8 +1,23 @@
+<%# Set page title with fallback %>
+<% content_for :title do %>
+  <%= t('admin.actions.settings_action.title', default: 'Settings') %>
+<% end %>
+
+<%# Set breadcrumb with fallback %>
+<% content_for :breadcrumbs do %>
+  <li class="breadcrumb-item">
+    <%= link_to t('admin.home.name', default: 'Home'), rails_admin.dashboard_path %>
+  </li>
+  <li class="breadcrumb-item active">
+    <%= t('admin.actions.settings_action.breadcrumb', default: 'Settings') %>
+  </li>
+<% end %>
+
 <%= content_for :contextual_tabs do %>
   <li class="active">
     <%= link_to request.path do %>
       <i class="fa fa-cog"></i>
-      Settings
+      <%= t('admin.actions.settings_action.menu', default: 'Settings') %>
     <% end %>
   </li>
 <% end %>
@@ -13,76 +28,100 @@
       <div class="card-header">
         <h3 class="card-title">
           <i class="fa fa-cog"></i>
-          Application Settings
+          <%= t('admin.actions.settings_action.title', default: 'Application Settings') %>
         </h3>
       </div>
       
-      <%= form_tag request.path, method: :post, class: 'form-horizontal', local: true do %>
-        <div class="card-body">
-          <% if @settings_data.any? %>
-            <div class="nav-tabs-custom">
-              <ul class="nav nav-tabs">
-                <% @settings_data.each_with_index do |(category, settings), index| %>
-                  <li class="nav-item">
-                    <a class="nav-link <%= 'active' if index == 0 %>" 
-                       data-toggle="tab" 
-                       href="#tab_<%= category.parameterize %>">
-                      <%= category %>
-                    </a>
-                  </li>
-                <% end %>
-              </ul>
-              
-              <div class="tab-content">
-                <% @settings_data.each_with_index do |(category, settings), index| %>
-                  <div class="tab-pane <%= 'active' if index == 0 %>" 
-                       id="tab_<%= category.parameterize %>">
-                    <div class="row">
-                      <div class="col-md-12">
-                        <% settings.each do |setting| %>
-                          <div class="form-group row">
-                            <label class="col-sm-3 col-form-label" 
-                                   for="setting_<%= setting[:key] %>">
-                              <%= setting[:label] %>
-                              <% if setting[:description] %>
-                                <small class="text-muted d-block">
-                                  <%= setting[:description] %>
-                                </small>
-                              <% end %>
-                            </label>
-                            
-                            <div class="col-sm-6">
-                              <% field_name = "settings[#{setting[:key]}]" %>
-                              <% field_id = "setting_#{setting[:key]}" %>
-                              <% current_value = setting[:current_value] %>
-                              
-                              <% case setting[:field_type] %>
-                              <% when :boolean %>
-                                <div class="form-check">
-                                  <%= check_box_tag(field_name, '1', current_value, id: field_id, class: 'form-check-input') %>
-                                  <%= hidden_field_tag(field_name, '0') %>
-                                  <%= label_tag(field_id, 'Enabled', class: 'form-check-label') %>
+      <div class="card-body">
+        <% if @settings_data.any? %>
+          <div class="nav-tabs-custom">
+            <ul class="nav nav-tabs" role="tablist">
+              <% @settings_data.each_with_index do |(category, settings), index| %>
+                <li class="nav-item" role="presentation">
+                  <a class="nav-link <%= 'active' if index == 0 %>" 
+                     id="tab-<%= category.parameterize %>-tab"
+                     data-bs-toggle="tab" 
+                     data-toggle="tab"
+                     href="#tab_<%= category.parameterize %>"
+                     role="tab"
+                     aria-controls="tab_<%= category.parameterize %>"
+                     aria-selected="<%= index == 0 ? 'true' : 'false' %>">
+                    <%= category %>
+                  </a>
+                </li>
+              <% end %>
+            </ul>
+            
+            <div class="tab-content">
+              <% @settings_data.each_with_index do |(category, settings), index| %>
+                <div class="tab-pane fade <%= 'show active' if index == 0 %>" 
+                     id="tab_<%= category.parameterize %>"
+                     role="tabpanel"
+                     aria-labelledby="tab-<%= category.parameterize %>-tab">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <% settings.each do |setting| %>
+                        <div class="form-group row setting-row" data-key="<%= setting[:key] %>">
+                          <label class="col-sm-3 col-form-label" 
+                                 for="setting_<%= setting[:key] %>">
+                            <%= setting[:label] %>
+                            <% if setting[:description] %>
+                              <small class="text-muted d-block">
+                                <%= setting[:description] %>
+                              </small>
+                            <% end %>
+                          </label>
+                          
+                          <div class="col-sm-6">
+                            <%= form_tag request.path, method: :post, class: 'setting-form', local: false, data: { key: setting[:key] } do %>
+                              <div class="input-group">
+                                <% field_name = "setting_value" %>
+                                <% field_id = "setting_#{setting[:key]}" %>
+                                <% current_value = setting[:current_value] %>
+                                <%= hidden_field_tag "setting_key", setting[:key] %>
+                                
+                                <% case setting[:field_type] %>
+                                <% when :boolean %>
+                                  <div class="form-check" style="padding-top: 8px;">
+                                    <%= check_box_tag(field_name, '1', current_value, id: field_id, class: 'form-check-input') %>
+                                    <%= hidden_field_tag(field_name, '0') %>
+                                    <%= label_tag(field_id, 'Enabled', class: 'form-check-label') %>
+                                  </div>
+                                <% when :integer %>
+                                  <%= number_field_tag(field_name, current_value, id: field_id, class: 'form-control', step: 1) %>
+                                <% when :float %>
+                                  <%= number_field_tag(field_name, current_value, id: field_id, class: 'form-control', step: 0.01) %>
+                                <% when :text %>
+                                  <%= text_area_tag(field_name, current_value, id: field_id, class: 'form-control', rows: 4) %>
+                                <% when :email %>
+                                  <%= email_field_tag(field_name, current_value, id: field_id, class: 'form-control') %>
+                                <% when :url %>
+                                  <%= url_field_tag(field_name, current_value, id: field_id, class: 'form-control') %>
+                                <% when :array %>
+                                  <% array_value = current_value.is_a?(Array) ? current_value.join(', ') : current_value.to_s %>
+                                  <%= text_field_tag(field_name, array_value, id: field_id, class: 'form-control', placeholder: 'Enter comma-separated values') %>
+                                <% when :json %>
+                                  <% json_value = current_value.is_a?(String) ? current_value : current_value.to_json %>
+                                  <%= text_area_tag(field_name, json_value, id: field_id, class: 'form-control font-monospace', rows: 6, placeholder: '{"key": "value"}') %>
+                                <% else # :string %>
+                                  <%= text_field_tag(field_name, current_value, id: field_id, class: 'form-control') %>
+                                <% end %>
+                                
+                                <div class="input-group-append">
+                                  <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fa fa-save"></i> Save
+                                  </button>
                                 </div>
-                              <% when :integer %>
-                                <%= number_field_tag(field_name, current_value, id: field_id, class: 'form-control', step: 1) %>
-                              <% when :float %>
-                                <%= number_field_tag(field_name, current_value, id: field_id, class: 'form-control', step: 0.01) %>
-                              <% when :text %>
-                                <%= text_area_tag(field_name, current_value, id: field_id, class: 'form-control', rows: 4) %>
-                              <% when :email %>
-                                <%= email_field_tag(field_name, current_value, id: field_id, class: 'form-control') %>
-                              <% when :url %>
-                                <%= url_field_tag(field_name, current_value, id: field_id, class: 'form-control') %>
-                              <% when :array %>
-                                <% array_value = current_value.is_a?(Array) ? current_value.join(', ') : current_value.to_s %>
-                                <%= text_field_tag(field_name, array_value, id: field_id, class: 'form-control', placeholder: 'Enter comma-separated values') %>
-                                <small class="form-text text-muted">Separate multiple values with commas</small>
-                              <% when :json %>
-                                <% json_value = current_value.is_a?(String) ? current_value : current_value.to_json %>
-                                <%= text_area_tag(field_name, json_value, id: field_id, class: 'form-control font-monospace', rows: 6, placeholder: '{"key": "value"}') %>
-                                <small class="form-text text-muted">Enter valid JSON</small>
-                              <% else # :string %>
-                                <%= text_field_tag(field_name, current_value, id: field_id, class: 'form-control') %>
+                              </div>
+                              
+                              <% if [:array, :json].include?(setting[:field_type]) %>
+                                <small class="form-text text-muted">
+                                  <% if setting[:field_type] == :array %>
+                                    Separate multiple values with commas
+                                  <% else %>
+                                    Enter valid JSON
+                                  <% end %>
+                                </small>
                               <% end %>
                               
                               <% if setting[:default_value] != setting[:current_value] %>
@@ -90,59 +129,125 @@
                                   Default: <%= setting[:default_value].inspect %>
                                 </small>
                               <% end %>
-                            </div>
+                            <% end %>
+                          </div>
+                          
+                          <div class="col-sm-3">
+                            <% if setting[:current_value] != setting[:default_value] %>
+                              <button type="button" 
+                                      class="btn btn-sm btn-outline-secondary reset-to-default"
+                                      data-key="<%= setting[:key] %>"
+                                      data-default="<%= setting[:default_value] %>"
+                                      title="Reset to default">
+                                <i class="fa fa-undo"></i> Reset
+                              </button>
+                            <% end %>
                             
-                            <div class="col-sm-3">
-                              <% if setting[:current_value] != setting[:default_value] %>
-                                <button type="button" 
-                                        class="btn btn-sm btn-outline-secondary reset-to-default"
-                                        data-key="<%= setting[:key] %>"
-                                        data-default="<%= setting[:default_value] %>"
-                                        title="Reset to default">
-                                  <i class="fa fa-undo"></i> Reset
-                                </button>
-                              <% end %>
+                            <div class="setting-status mt-1">
+                              <!-- Status messages will appear here -->
                             </div>
                           </div>
-                        <% end %>
-                      </div>
+                        </div>
+                      <% end %>
                     </div>
                   </div>
-                <% end %>
-              </div>
+                </div>
+              <% end %>
             </div>
-          <% else %>
-            <div class="alert alert-info">
-              <i class="fa fa-info-circle"></i>
-              No settings found. Make sure your Setting class has default values defined.
-            </div>
-          <% end %>
-        </div>
+          </div>
+        <% else %>
+          <div class="alert alert-info">
+            <i class="fa fa-info-circle"></i>
+            No settings found. Make sure your Setting class has default values defined.
+          </div>
+        <% end %>
+      </div>
+      
+      <div class="card-footer">
+        <a href="<%= rails_admin.dashboard_path %>" class="btn btn-secondary">
+          <i class="fa fa-arrow-left"></i>
+          Back to Dashboard
+        </a>
         
-        <div class="card-footer">
-          <button type="submit" class="btn btn-primary">
-            <i class="fa fa-save"></i>
-            Save Settings
-          </button>
-          
-          <a href="<%= rails_admin.dashboard_path %>" class="btn btn-secondary">
-            <i class="fa fa-arrow-left"></i>
-            Back to Dashboard
-          </a>
+        <div class="float-right">
+          <small class="text-muted">
+            <i class="fa fa-info-circle"></i>
+            Changes are saved individually when you click the Save button next to each field.
+          </small>
         </div>
-      <% end %>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Handle individual setting form submissions
+  document.querySelectorAll('.setting-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      var formData = new FormData(form);
+      var key = form.dataset.key;
+      var submitButton = form.querySelector('button[type="submit"]');
+      var statusDiv = form.closest('.setting-row').querySelector('.setting-status');
+      
+      // Show loading state
+      submitButton.disabled = true;
+      submitButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
+      statusDiv.innerHTML = '';
+      
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Show success message
+          statusDiv.innerHTML = '<small class="text-success"><i class="fa fa-check"></i> Saved!</small>';
+          
+          // Update reset button visibility
+          var resetButton = form.closest('.setting-row').querySelector('.reset-to-default');
+          if (resetButton) {
+            var field = form.querySelector('[name="setting_value"]');
+            var currentValue = field.type === 'checkbox' ? field.checked.toString() : field.value;
+            var defaultValue = resetButton.dataset.default;
+            resetButton.style.display = currentValue !== defaultValue ? 'inline-block' : 'none';
+          }
+          
+          // Clear success message after 3 seconds
+          setTimeout(function() {
+            statusDiv.innerHTML = '';
+          }, 3000);
+        } else {
+          // Show error message
+          statusDiv.innerHTML = '<small class="text-danger"><i class="fa fa-exclamation-triangle"></i> ' + (data.error || 'Failed to save') + '</small>';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        statusDiv.innerHTML = '<small class="text-danger"><i class="fa fa-exclamation-triangle"></i> Network error</small>';
+      })
+      .finally(function() {
+        // Restore button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fa fa-save"></i> Save';
+      });
+    });
+  });
+  
   // Handle reset to default buttons
   document.querySelectorAll('.reset-to-default').forEach(function(button) {
     button.addEventListener('click', function() {
       var key = this.dataset.key;
       var defaultValue = this.dataset.default;
-      var field = document.querySelector('[name="settings[' + key + ']"]');
+      var settingRow = this.closest('.setting-row');
+      var field = settingRow.querySelector('[name="setting_value"]');
       
       if (field) {
         if (field.type === 'checkbox') {
@@ -151,26 +256,27 @@ document.addEventListener('DOMContentLoaded', function() {
           field.value = defaultValue;
         }
         
-        // Hide the reset button after resetting
-        this.style.display = 'none';
+        // Trigger the form submission to save the reset value
+        var form = settingRow.querySelector('.setting-form');
+        if (form) {
+          form.dispatchEvent(new Event('submit', { bubbles: true }));
+        }
       }
     });
   });
   
   // Show/hide reset buttons based on field changes
-  document.querySelectorAll('input, textarea, select').forEach(function(field) {
-    if (field.name && field.name.startsWith('settings[')) {
-      field.addEventListener('change', function() {
-        var key = this.name.match(/settings\[(.+)\]/)[1];
-        var resetButton = document.querySelector('[data-key="' + key + '"]');
-        var defaultValue = resetButton ? resetButton.dataset.default : null;
-        
-        if (resetButton) {
-          var currentValue = this.type === 'checkbox' ? this.checked.toString() : this.value;
-          resetButton.style.display = currentValue !== defaultValue ? 'inline-block' : 'none';
-        }
-      });
-    }
+  document.querySelectorAll('[name="setting_value"]').forEach(function(field) {
+    field.addEventListener('change', function() {
+      var settingRow = this.closest('.setting-row');
+      var resetButton = settingRow.querySelector('.reset-to-default');
+      
+      if (resetButton) {
+        var currentValue = this.type === 'checkbox' ? this.checked.toString() : this.value;
+        var defaultValue = resetButton.dataset.default;
+        resetButton.style.display = currentValue !== defaultValue ? 'inline-block' : 'none';
+      }
+    });
   });
 });
 </script>

@@ -1,0 +1,8 @@
+en:
+  admin:
+    actions:
+      settings_action:
+        title: "Application Settings"
+        menu: "Settings"
+        breadcrumb: "Settings"
+        description: "Manage application settings with an intuitive interface"

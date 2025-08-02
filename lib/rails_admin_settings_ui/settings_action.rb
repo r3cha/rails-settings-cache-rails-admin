@@ -14,9 +14,18 @@ module RailsAdminSettingsUi
       proc do
         
         def build_settings_data
-          return {} unless defined?(Setting)
+          unless defined?(Setting)
+            Rails.logger.warn "Setting class not found!"
+            return {}
+          end
           
           settings_class = Setting
+          
+          # Verify the Setting class has the methods we need
+          Rails.logger.info "=== SETTING CLASS VERIFICATION ==="
+          Rails.logger.info "Setting class: #{settings_class}"
+          Rails.logger.info "Setting ancestors: #{settings_class.ancestors.map(&:name)}"
+          Rails.logger.info "Setting responds to field methods? #{settings_class.respond_to?(:field)}"
           
           # Debug: Let's see what methods are available
           Rails.logger.info "=== DEBUG: Setting class methods ==="
@@ -146,13 +155,65 @@ module RailsAdminSettingsUi
           grouped_settings
         end
 
-        def update_settings
-          return unless defined?(Setting) && params[:settings]
+        def update_single_setting
+          return unless defined?(Setting) && params[:setting_key] && params[:setting_value]
           
-          params[:settings].each do |key, value|
+          key = params[:setting_key]
+          value = params[:setting_value]
+          
+          Rails.logger.info "=== UPDATING SINGLE SETTING ==="
+          Rails.logger.info "Key: #{key}, Value: #{value}"
+          
+          begin
             # Convert value based on the original type
             converted_value = convert_value(key, value)
-            Setting.public_send("#{key}=", converted_value)
+            
+            Rails.logger.info "Setting #{key}: #{value} -> #{converted_value} (#{converted_value.class})"
+            
+            # Use direct ActiveRecord approach to bypass full model validation
+            # This prevents validation errors from other unrelated settings
+            setting_record = Setting.find_or_initialize_by(var: key)
+            
+            # Serialize the value properly based on the rails-settings-cached format
+            serialized_value = case converted_value
+            when String
+              converted_value
+            when NilClass
+              nil
+            else
+              # Use YAML serialization for complex types (same as rails-settings-cached)
+              converted_value.to_yaml
+            end
+            
+            Rails.logger.info "Serialized value: #{serialized_value}"
+            
+            # Update directly without triggering full model validations
+            if setting_record.persisted?
+              result = setting_record.update_column(:value, serialized_value)
+              Rails.logger.info "Updated existing record: #{result}"
+            else
+              setting_record.value = serialized_value
+              result = setting_record.save(validate: false) # Skip validations to avoid cross-field validation errors
+              Rails.logger.info "Created new record: #{result}"
+            end
+            
+            # Clear the settings cache so the new value is loaded
+            if Setting.respond_to?(:clear_cache)
+              Setting.clear_cache
+            elsif Setting.respond_to?(:reload!)
+              Setting.reload!
+            end
+            
+            # Verify the setting was actually updated
+            new_value = Setting.public_send(key)
+            Rails.logger.info "Verification: #{key} is now #{new_value}"
+            
+            return { success: true, message: "Setting updated successfully", new_value: new_value }
+            
+          rescue => e
+            Rails.logger.error "Failed to update setting #{key}: #{e.message}"
+            Rails.logger.error e.backtrace.join("\n")
+            return { success: false, error: e.message }
           end
         end
 
@@ -210,7 +271,9 @@ module RailsAdminSettingsUi
         end
 
         def convert_value(key, value)
-          return nil if value.blank?
+          # Handle blank values
+          return nil if value.nil?
+          return "" if value == ""
           
           # Get the original type from defaults using the same approach as build_settings_data
           defaults = if Setting.respond_to?(:get_defaults)
@@ -227,31 +290,62 @@ module RailsAdminSettingsUi
           
           case original_value
           when TrueClass, FalseClass
-            value == '1' || value == 'true'
+            # Handle checkbox values - they come as "1" for checked, "0" for unchecked
+            if value.is_a?(Array) && value.size == 2
+              # Rails checkbox helper sends ["0", "1"] when checked, ["0"] when unchecked
+              value.include?("1")
+            else
+              value == '1' || value == 'true' || value == true
+            end
           when Integer
-            value.to_i
+            value.to_s.strip.empty? ? 0 : value.to_i
           when Float
-            value.to_f
+            value.to_s.strip.empty? ? 0.0 : value.to_f
           when Array
-            value.is_a?(Array) ? value : value.split(',').map(&:strip)
+            if value.is_a?(Array)
+              value
+            else
+              value.to_s.split(',').map(&:strip).reject(&:empty?)
+            end
           when Hash
-            value.is_a?(Hash) ? value : JSON.parse(value)
+            if value.is_a?(Hash)
+              value
+            else
+              JSON.parse(value.to_s)
+            end
           else
-            value
+            value.to_s
           end
-        rescue JSON::ParserError
-          value
+        rescue JSON::ParserError => e
+          Rails.logger.error "JSON parsing error for key #{key}: #{e.message}"
+          value.to_s
         end
+        
+        Rails.logger.info "=== SETTINGS ACTION ==="
+        Rails.logger.info "Request method: #{request.method}"
+        Rails.logger.info "Request path: #{request.path}"
+        Rails.logger.info "Params: #{params.inspect}"
+        Rails.logger.info "AJAX request: #{request.xhr?}"
         
         @settings_data = build_settings_data
         
         if request.post?
-          update_settings
-          flash[:notice] = "Settings updated successfully!"
-          redirect_to request.path
+          Rails.logger.info "Processing POST request for settings update"
+          
+          # Handle individual setting update (AJAX)
+          if request.xhr? && params[:setting_key] && params[:setting_value]
+            Rails.logger.info "Processing individual setting update via AJAX"
+            result = update_single_setting
+            render json: result
+          else
+            Rails.logger.info "No individual setting update parameters found"
+            # Fallback for non-AJAX requests or invalid parameters
+            render json: { success: false, error: "Invalid request parameters" }, status: 400
+          end
+        else
+          Rails.logger.info "Rendering settings page with #{@settings_data.size} categories"
+          render template: 'rails_admin_settings_ui/settings/index'
         end
-
-        render template: 'rails_admin_settings_ui/settings/index'
       end
     end
 
@@ -265,6 +359,29 @@ module RailsAdminSettingsUi
 
     register_instance_option :http_methods do
       [:get, :post]
+    end
+
+    register_instance_option :visible? do
+      true
+    end
+
+    register_instance_option :action_name do
+      'settings_action'
+    end
+
+    # Set proper title with fallback
+    register_instance_option :title do
+      I18n.t('admin.actions.settings_action.title', default: 'Settings')
+    end
+
+    # Set proper menu label with fallback
+    register_instance_option :menu_label do
+      I18n.t('admin.actions.settings_action.menu', default: 'Settings')
+    end
+
+    # Set breadcrumb text with fallback
+    register_instance_option :breadcrumb_text do
+      I18n.t('admin.actions.settings_action.breadcrumb', default: 'Settings')
     end
 
   end
